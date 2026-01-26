@@ -80,17 +80,16 @@ python validation/multimodel.py
 ```
 condensate-theorem/
 ├── README.md                 # This file
-├── paper/
-│   └── condensate_theorem.pdf    # Research paper
+├── LICENSE                   # CC BY 4.0 + MIT
 ├── validation/
 │   ├── attention_mass.py     # Proves 94% condensate
 │   ├── prediction_match.py   # Proves 100% accuracy
 │   └── multimodel.py         # Tests across model families
-├── benchmarks/
-│   └── results.csv           # Raw benchmark data
-└── figures/
-    └── attention_heatmap.png # Visualizations
+└── benchmarks/
+    └── results.csv           # Raw benchmark data
 ```
+
+**Note**: The research paper is available on arXiv. The optimized Triton kernel is available under commercial license.
 
 ## Key Insight
 
@@ -112,10 +111,10 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
 
 ```bibtex
 @misc{condensate2026,
-  author = {[Author Name]},
+  author = {Jorge L. Ruiz Williams},
   title = {The Condensate Theorem: Transformers Are O(n), Not O(n²)},
   year = {2026},
-  howpublished = {\url{https://github.com/[username]/condensate-theorem}}
+  howpublished = {\url{https://github.com/JorgeLRW/condensate-theorem}}
 }
 ```
 
@@ -128,7 +127,7 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
 ## Contact
 
 For commercial licensing of the optimized sparse attention kernel:
-- Email: [your-email]
+- Email: jorgeruizwilliams@gmail.com
 
 ---
 
