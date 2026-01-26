@@ -33,7 +33,7 @@ We discover that trained language models concentrate **94% of attention mass** i
 | 4096 | 23.85 ms | 0.26 ms | **91x** |
 | 8192 | 441.61 ms | 0.43 ms | **1036x** |
 
-*Benchmarked on NVIDIA RTX 4090, PyTorch 2.x*
+*Benchmarked on NVIDIA RTX 4090 Laptop (16GB), PyTorch 2.x*
 
 ## Accuracy: 100% Match
 
@@ -43,6 +43,9 @@ Token-by-token generation produces **identical predictions**:
 |--------------|---------------|----------------|----------------|
 | GPT-2 | Small, Medium, Large, XL | 100% | 100% |
 | Pythia | 70M, 160M, 410M, 1B, 2.8B | 100% | 100% |
+| **Modern (GQA + RoPE)** | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100% | 100% |
+
+**Validated on modern architectures** with Grouped-Query Attention (GQA) ratios from 4:1 to 8:1 and Rotary Position Embeddings (RoPE).
 
 ## The Theorem
 
