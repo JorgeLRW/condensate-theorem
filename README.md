@@ -129,6 +129,9 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
 For commercial licensing of the optimized sparse attention kernel:
 - Email: jorgeruizwilliams@gmail.com
 
+## Published Papers (as of 0.1.0)
+- https://zenodo.org/records/18383734
+
 ---
 
 *Discovery date: January 2026*
