@@ -12,12 +12,17 @@ warnings.filterwarnings('ignore')
 
 
 MODELS = [
+    # GPT-2 family (absolute positional embeddings)
     ("gpt2", "GPT-2 Small (124M)"),
     ("gpt2-medium", "GPT-2 Medium (355M)"),
     ("gpt2-large", "GPT-2 Large (774M)"),
+    # Pythia family (RoPE)
     ("EleutherAI/pythia-70m", "Pythia 70M"),
     ("EleutherAI/pythia-160m", "Pythia 160M"),
     ("EleutherAI/pythia-410m", "Pythia 410M"),
+    # Modern architectures (GQA + RoPE)
+    ("Qwen/Qwen2-0.5B", "Qwen2 0.5B (GQA+RoPE)"),
+    ("TinyLlama/TinyLlama-1.1B-Chat-v1.0", "TinyLlama 1.1B (GQA+RoPE)"),
 ]
 
 
