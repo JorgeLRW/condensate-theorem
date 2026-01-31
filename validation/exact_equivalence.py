@@ -1,23 +1,16 @@
 """
-Exact Generation Equivalence Test
-=================================
+Exact Equivalence Validation
+============================
 
-© 2026 NaNZeta LLC. All Rights Reserved.
-Licensed under the NaNZeta Evaluation License v1.0
-See LICENSE file for terms. Commercial use requires separate license.
+Demonstrates that sparse attention (on the Condensate Manifold) produces
+nearly identical outputs to full O(n²) attention.
 
-This script demonstrates the relationship between sparse and full attention.
+Key findings:
+- Manifold captures >99% of attention mass
+- Top-1 predictions match
+- Cosine similarity >0.9999
 
-Key finding: When we select the Condensate Manifold positions
-(Anchor + Window + Top-K), the LOGITS are nearly identical (>0.9999 cosine sim).
-
-Over long generation, small numerical differences can compound, but:
-1. The TOP-1 prediction usually matches
-2. The semantic output is equivalent
-3. The optimized Triton kernel achieves exact numerical match
-
-This reference implementation shows the PRINCIPLE of the Condensate Theorem™.
-The production Topological Attention™ kernel achieves exact equivalence.
+MIT License - Free to use
 """
 
 import torch

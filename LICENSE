@@ -1,71 +1,35 @@
-NaNZeta Evaluation License v1.0
+MIT License
 
-Copyright © 2026 NaNZeta LLC. All Rights Reserved.
+Copyright (c) 2026 Jorge Granados
 
-================================================================================
-TERMS AND CONDITIONS
-================================================================================
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-1. GRANT OF LICENSE
-   This license grants you the right to use, copy, and modify the reference
-   implementation code ("Code") in this repository SOLELY for:
-   - Academic research and education
-   - Personal, non-commercial experimentation
-   - Verification and reproduction of the Condensate Theorem™
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2. RESTRICTIONS
-   You MAY NOT:
-   - Use the Code in any commercial product or service
-   - Integrate the Code into production systems
-   - Sell, sublicense, or distribute derivative works commercially
-   - Use the Code to train or fine-tune machine learning models for commercial use
-   - Remove or alter any copyright, trademark, or attribution notices
-
-3. COMMERCIAL LICENSING
-   For commercial use, production deployment, or integration into for-profit
-   products or services, you must obtain a separate commercial license from
-   NaNZeta LLC. Contact: jorgeruizwilliams@gmail.com
-
-4. TRADEMARKS
-   "Condensate Theorem™" and "Topological Attention™" are trademarks of
-   NaNZeta LLC. Use of these marks requires written permission.
-
-5. ATTRIBUTION
-   Any use of this Code must include:
-   - Citation of the original paper (see CITATION.cff or DOI below)
-   - Clear attribution to NaNZeta LLC
-   - Link to this repository
-
-6. NO WARRANTY
-   THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED. IN NO EVENT SHALL NANZETA LLC BE LIABLE FOR ANY CLAIM, DAMAGES,
-   OR OTHER LIABILITY ARISING FROM THE USE OF THE CODE.
-
-7. TERMINATION
-   This license terminates automatically if you violate any of its terms.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ================================================================================
-WHAT'S INCLUDED vs PROPRIETARY
+NOTE ON PROPRIETARY KERNEL
 ================================================================================
 
-INCLUDED (under this Evaluation License):
-  - Reference Python implementations for theorem validation
-  - Benchmark results and methodology
-  - Research paper (also available under CC BY-NC 4.0)
+The Condensate Theorem and all mathematical results are FREE to use.
+Implement the ideas however you want.
 
-NOT INCLUDED (Proprietary - requires commercial license):
-  - Optimized Triton kernel ("Topological Attention™")
-  - Production-ready sparse attention implementation
-  - O(n) inference engine
+The optimized Topological Attention kernel (Triton implementation) referenced
+in benchmarks is NOT included in this repository. It is proprietary:
 
-The reference implementations are intentionally unoptimized (O(n²)) and serve
-only to validate the theoretical claims of the Condensate Theorem™.
+    © 2026 Jorge Granados / NaNZeta LLC
 
-================================================================================
-CONTACT
-================================================================================
-
-Commercial licensing: jorgeruizwilliams@gmail.com
-Research inquiries:   jorgeruizwilliams@gmail.com
-
-DOI: [10.5281/zenodo.XXXXXXX] (Update after Zenodo upload)
+For kernel licensing: jorgeruizwilliams@gmail.com

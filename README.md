@@ -153,6 +153,14 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
 | Memory (KV Cache at 524K) | ~3 GB | ~3 MB |
 | Power consumption | Baseline | **99% reduction** |
 
+## License
+
+**The theorem and math are free.** Use them however you want. MIT License.
+
+The optimized **Topological Attention kernel** (Triton) is proprietary:
+- © 2026 Jorge Granados / NaNZeta LLC  
+- Contact: jorgeruizwilliams@gmail.com
+
 ## Citation
 
 ```bibtex
@@ -160,43 +168,10 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
   author = {Granados, Jorge},
   title = {The Condensate Theorem: Transformers Are O(n), Not O(n²)},
   year = {2026},
-  publisher = {Zenodo},
-  doi = {10.5281/zenodo.XXXXXXX},
-  url = {https://github.com/NaNZeta/condensate-theorem},
-  note = {A General Framework for Exact Sparse Attention via Learned Selection}
+  url = {https://github.com/JorgeLRW/condensate-theorem}
 }
 ```
 
-## License & Legal
-
-© 2026 NaNZeta LLC. All Rights Reserved.
-
-| Component | License |
-|-----------|---------|
-| Research Paper | CC BY-NC 4.0 (non-commercial, cite required) |
-| Validation Scripts | NaNZeta Evaluation License (non-commercial only) |
-| Topological Attention™ Kernel | **Proprietary** — requires commercial license |
-
-**Trademarks**: "Condensate Theorem™" and "Topological Attention™" are trademarks of NaNZeta LLC.
-
-See [LICENSE](LICENSE) for full terms.
-
-## Commercial Licensing
-
-The optimized **Topological Attention™** kernel is available for licensing:
-
-- **Inference Providers**: Per-token or flat-rate licensing
-- **Hardware Vendors**: Silicon integration partnerships  
-- **Enterprise**: Custom deployment support
-
-**Contact**: jorgeruizwilliams@gmail.com
-
-## Links
-
-- 📄 **Paper**: [Zenodo DOI: 10.5281/zenodo.XXXXXXX](https://zenodo.org/records/XXXXXXX)
-- 🏢 **Company**: NaNZeta LLC
-- 📧 **Contact**: jorgeruizwilliams@gmail.com
-
 ---
 
-*© 2026 NaNZeta LLC. Discovery date: January 2026*
+*Discovery date: January 2026*
