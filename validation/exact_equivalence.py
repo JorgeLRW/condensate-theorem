@@ -2,6 +2,10 @@
 Exact Generation Equivalence Test
 =================================
 
+© 2026 NaNZeta LLC. All Rights Reserved.
+Licensed under the NaNZeta Evaluation License v1.0
+See LICENSE file for terms. Commercial use requires separate license.
+
 This script demonstrates the relationship between sparse and full attention.
 
 Key finding: When we select the Condensate Manifold positions
@@ -12,8 +16,8 @@ Over long generation, small numerical differences can compound, but:
 2. The semantic output is equivalent
 3. The optimized Triton kernel achieves exact numerical match
 
-This reference implementation shows the PRINCIPLE works.
-The production kernel achieves exact equivalence.
+This reference implementation shows the PRINCIPLE of the Condensate Theorem™.
+The production Topological Attention™ kernel achieves exact equivalence.
 """
 
 import torch

@@ -2,10 +2,14 @@
 Needle Retrieval Validation
 ===========================
 
+© 2026 NaNZeta LLC. All Rights Reserved.
+Licensed under the NaNZeta Evaluation License v1.0
+See LICENSE file for terms. Commercial use requires separate license.
+
 Tests that the Condensate Manifold can retrieve "needles" (important facts)
 buried in long sequences of filler text.
 
-This validates the Dynamic Top-K component of the manifold.
+This validates the Dynamic Top-K component of the Condensate Theorem™.
 """
 
 import torch

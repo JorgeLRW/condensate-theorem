@@ -2,7 +2,11 @@
 Attention Mass Validation
 =========================
 
-Validates the Condensate Theorem: trained transformers concentrate
+© 2026 NaNZeta LLC. All Rights Reserved.
+Licensed under the NaNZeta Evaluation License v1.0
+See LICENSE file for terms. Commercial use requires separate license.
+
+Validates the Condensate Theorem™: trained transformers concentrate
 attention mass on the Condensate Manifold:
 
     C_i = {Anchor} ∪ {Local Window} ∪ {Dynamic Top-K}

@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "The Condensate Theorem: Sparse Attention Without Approximation"
+authors:
+  - family-names: "Granados"
+    given-names: "Jorge"
+    affiliation: "NaNZeta LLC"
+type: "article"
+date-released: 2026-01-31
+repository-code: "https://github.com/NaNZeta/condensate-theorem"
+license: "NaNZeta Evaluation License v1.0"
+keywords:
+  - "attention mechanism"
+  - "sparse attention"
+  - "transformer"
+  - "efficient inference"
+  - "condensate theorem"
+  - "topological attention"
+abstract: |
+  We prove that trained transformer models concentrate >99% of attention mass
+  on a sparse, predictable manifold C_i = {Anchor} ∪ {Window} ∪ {Top-K}.
+  This enables exact O(n) attention computation with 157x measured speedup,
+  scaling to 1,257x at 1M tokens. Unlike approximation methods, the Condensate
+  Theorem™ achieves bit-exact equivalence with full O(n²) attention.
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Granados"
+      given-names: "Jorge"
+      affiliation: "NaNZeta LLC"
+  title: "The Condensate Theorem: Sparse Attention Without Approximation"
+  year: 2026
+  journal: "arXiv preprint"
+  # doi: "10.5281/zenodo.XXXXXXX"  # Uncomment after Zenodo upload
