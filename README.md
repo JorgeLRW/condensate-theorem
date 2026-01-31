@@ -189,14 +189,13 @@ The optimized **Topological Attention™** kernel is available for licensing:
 - **Hardware Vendors**: Silicon integration partnerships  
 - **Enterprise**: Custom deployment support
 
-**Contact**: licensing@nanzeta.com
+**Contact**: jorgeruizwilliams@gmail.com
 
 ## Links
 
 - 📄 **Paper**: [Zenodo DOI: 10.5281/zenodo.XXXXXXX](https://zenodo.org/records/XXXXXXX)
-- 🏢 **Company**: [NaNZeta LLC](https://nanzeta.com)
-- 📧 **Licensing**: licensing@nanzeta.com
-- 🔬 **Research**: research@nanzeta.com
+- 🏢 **Company**: NaNZeta LLC
+- 📧 **Contact**: jorgeruizwilliams@gmail.com
 
 ---
 
