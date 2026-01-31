@@ -28,14 +28,14 @@ We prove that trained language models concentrate attention on a **topological m
 
 ## Benchmark Results
 
-| Sequence Length | Flash Attention (SDPA) | Sparse (Triton) | Speedup | Sparsity |
-|-----------------|------------------------|-----------------|---------|----------|
-| 1,024 | 0.04 ms | 0.04 ms | 1.0x | 9.38% |
-| 4,096 | 0.53 ms | 0.07 ms | 7.5x | 2.34% |
-| 16,384 | 3.95 ms | 0.17 ms | 23.4x | 0.59% |
-| 65,536 | 61.52 ms | 0.76 ms | 80.7x | 0.15% |
-| **131,072** | **227.97 ms** | **1.45 ms** | **157x** | **0.07%** |
-| 1,000,000 (proj.) | ~14.6 s | ~11.6 ms | **1,257x** | 0.01% |
+| Sequence Length   | Flash Attention (SDPA) | Sparse (Triton)   | Speedup          | Sparsity        |
+| ----------------- | ---------------------- | ----------------- | ---------------- | --------------- |
+| 1,024             | 0.04 ms                | 0.04 ms           | 1.0x             | 9.38%           |
+| 4,096             | 0.53 ms                | 0.07 ms           | 7.5x             | 2.34%           |
+| 16,384            | 3.95 ms                | 0.17 ms           | 23.4x            | 0.59%           |
+| 65,536            | 61.52 ms               | 0.76 ms           | 80.7x            | 0.15%           |
+| **131,072** | **227.97 ms**    | **1.45 ms** | **157x**   | **0.07%** |
+| 1,000,000 (proj.) | ~14.6 s                | ~11.6 ms          | **1,257x** | 0.01%           |
 
 *Benchmarked on NVIDIA RTX 4090 Laptop (16GB), PyTorch 2.x, Triton 2.1*
 
@@ -43,11 +43,11 @@ We prove that trained language models concentrate attention on a **topological m
 
 Token-by-token generation produces **bit-identical predictions**:
 
-| Model Family | Models Tested | Token Match | Cosine Similarity |
-|--------------|---------------|-------------|-------------------|
-| GPT-2 | Small, Medium, Large, XL | 100% | 1.000 |
-| Pythia | 70M → 2.8B | 100% | 1.000 |
-| **Modern (GQA + RoPE)** | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100% | 1.000 |
+| Model Family                  | Models Tested                          | Token Match | Cosine Similarity |
+| ----------------------------- | -------------------------------------- | ----------- | ----------------- |
+| GPT-2                         | Small, Medium, Large, XL               | 100%        | 1.000             |
+| Pythia                        | 70M → 2.8B                            | 100%        | 1.000             |
+| **Modern (GQA + RoPE)** | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100%        | 1.000             |
 
 ## Plug-and-Play: Zero Retraining
 
@@ -64,10 +64,15 @@ The sparsity is **already learned** by the model. We simply respect it.
 
 **Definition (Condensate Manifold):** For query position $i$, the attention topology is supported on:
 
-$$\mathcal{C}_i = \underbrace{\{0\}}_{\text{Anchor}} \cup \underbrace{\{j : i-W+1 \leq j \leq i\}}_{\text{Local Window}} \cup \underbrace{\text{Top-}k(\{S_{ij}\})}_{\text{Dynamic}}$$
+$$
+\mathcal{C}_i = \underbrace{\{0\}}_{\text{Anchor}} \cup \underbrace{\{j : i-W+1 \leq j \leq i\}}_{\text{Local Window}} \cup \underbrace{\text{Top-}k(\{S_{ij}\})}_{\text{Dynamic}}
+$$
 
 **Theorem (Condensate):** For trained autoregressive LLMs, attention is topologically sparse. There exists a manifold $\mathcal{C}$ such that:
-$$\text{CosineSim}(\text{Attention}_{\mathcal{C}}, \text{Attention}_{\text{Full}}) = 1.0$$
+
+$$
+\text{CosineSim}(\text{Attention}_{\mathcal{C}}, \text{Attention}_{\text{Full}}) = 1.0
+$$
 
 **Corollary (Finite Support):** As sequence length $n \to \infty$, the cardinality $|\mathcal{C}_i|$ remains bounded by a constant. The semantic capacity of a single query is finite.
 
@@ -147,25 +152,26 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
 
 ## Economic Impact
 
-| Metric | Full Attention | Condensate Attention |
-|--------|----------------|----------------------|
-| Cost per 1M-token response | ~$1.60 | ~$0.001 |
-| Memory (KV Cache at 524K) | ~3 GB | ~3 MB |
-| Power consumption | Baseline | **99% reduction** |
+| Metric                     | Full Attention   | Condensate Attention    |
+| -------------------------- | ---------------- | ----------------------- |
+| Cost per 1M-token response | ~$1.60 | ~$0.001 |                         |
+| Memory (KV Cache at 524K)  | ~3 GB            | ~3 MB                   |
+| Power consumption          | Baseline         | **99% reduction** |
 
 ## License
 
 **The theorem and math are free.** Use them however you want. MIT License.
 
 The optimized **Topological Attention kernel** (Triton) is proprietary:
-- © 2026 Jorge Granados / NaNZeta LLC  
+
+- © 2026 Jorge L. Ruiz Williams/ NaNZeta LLC
 - Contact: jorgeruizwilliams@gmail.com
 
 ## Citation
 
 ```bibtex
 @misc{condensate2026,
-  author = {Granados, Jorge},
+  author = {Ruiz Williams, Jorge L.},
   title = {The Condensate Theorem: Transformers Are O(n), Not O(n²)},
   year = {2026},
   url = {https://github.com/JorgeLRW/condensate-theorem}
