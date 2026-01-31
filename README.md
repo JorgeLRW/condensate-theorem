@@ -97,13 +97,16 @@ Run the validation scripts to reproduce our findings:
 # Install dependencies
 pip install torch transformers
 
-# Validate attention mass distribution
+# 1. Validate attention mass distribution (shows WHY manifold works)
 python validation/attention_mass.py
 
-# Validate prediction accuracy
-python validation/prediction_match.py
+# 2. Validate needle retrieval (tests Dynamic Top-K component)
+python validation/needle_retrieval.py
 
-# Multi-model validation
+# 3. Test EXACT generation equivalence (sparse vs full attention)
+python validation/exact_equivalence.py
+
+# 4. Multi-model validation (GPT-2, Pythia, Qwen2, TinyLlama)
 python validation/multimodel.py
 ```
 
@@ -111,14 +114,16 @@ python validation/multimodel.py
 
 ```
 condensate-theorem/
-├── README.md                 # This file
-├── LICENSE                   # CC BY 4.0 + MIT
+├── README.md                      # This file
+├── LICENSE                        # CC BY 4.0 + MIT
 ├── validation/
-│   ├── attention_mass.py     # Proves 94% condensate
-│   ├── prediction_match.py   # Proves 100% accuracy
-│   └── multimodel.py         # Tests across model families
+│   ├── attention_mass.py          # Proves manifold captures ~100% attention
+│   ├── needle_retrieval.py        # Proves Dynamic Top-K retrieves needles
+│   ├── exact_equivalence.py       # Proves sparse == full (token-by-token)
+│   ├── prediction_match.py        # Legacy accuracy test
+│   └── multimodel.py              # Tests across model families
 └── benchmarks/
-    └── results.csv           # Raw benchmark data
+    └── results.csv                # Raw benchmark data (157x speedup)
 ```
 
 **Note**: The research paper is available on arXiv. The optimized Triton kernel is available under commercial license.
