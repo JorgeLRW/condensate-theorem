@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 Jorge Granados
+Copyright (c) 2026 Jorge L. Ruiz Williams / NaNZeta LLC
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,6 @@ Implement the ideas however you want.
 The optimized Topological Attention kernel (Triton implementation) referenced
 in benchmarks is NOT included in this repository. It is proprietary:
 
-    © 2026 Jorge Granados / NaNZeta LLC
+    © 2026 Jorge L. Ruiz Williams / NaNZeta LLC
 
 For kernel licensing: jorgeruizwilliams@gmail.com

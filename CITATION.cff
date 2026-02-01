@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this work, please cite it as below."
 title: "The Condensate Theorem: Sparse Attention Without Approximation"
 authors:
-  - family-names: "Granados"
-    given-names: "Jorge"
+  - family-names: "Ruiz Williams"
+    given-names: "Jorge L."
 type: "article"
 date-released: 2026-01-31
 repository-code: "https://github.com/JorgeLRW/condensate-theorem"
@@ -22,8 +22,8 @@ abstract: |
 preferred-citation:
   type: article
   authors:
-    - family-names: "Granados"
-      given-names: "Jorge"
+    - family-names: "Ruiz Williams"
+      given-names: "Jorge L."
   title: "The Condensate Theorem: Sparse Attention Without Approximation"
   year: 2026
   url: "https://github.com/JorgeLRW/condensate-theorem"
