@@ -1,13 +1,23 @@
 """
-Needle Retrieval Validation
-===========================
+Needle Retrieval Validation (REFERENCE IMPLEMENTATION)
+======================================================
 
 Tests that the Condensate Manifold can retrieve "needles" (important facts)
 buried in long sequences of filler text.
 
 This validates the Dynamic Top-K component of the Condensate Theorem.
 
-MIT License - Free to use
+-----------------------------------------------------------------------
+NOTE: This is a REFERENCE IMPLEMENTATION for theorem validation.
+      The sparse_attention_with_topk() function below is INTENTIONALLY
+      SIMPLE and UNOPTIMIZED - using explicit loops for readability.
+      
+      The production Topological Attention kernel (157x+ speedup)
+      uses optimized Triton and is available under commercial license.
+      Contact: jorgeruizwilliams@gmail.com
+-----------------------------------------------------------------------
+
+MIT License - Free to use for validation and learning
 """
 
 import torch

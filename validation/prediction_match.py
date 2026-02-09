@@ -1,11 +1,21 @@
 """
-Prediction Match Validation
-===========================
+Prediction Match Validation (REFERENCE IMPLEMENTATION)
+======================================================
 
 Validates that sparse attention (pos-0 + window) produces
 IDENTICAL predictions to full O(n²) attention.
 
-This is a REFERENCE implementation - intentionally NOT optimized.
+-----------------------------------------------------------------------
+NOTE: This is a REFERENCE IMPLEMENTATION for theorem validation.
+      The sparse_attention_reference() function below is INTENTIONALLY
+      SIMPLE and UNOPTIMIZED - using explicit Python loops.
+      
+      The production Topological Attention kernel (157x+ speedup)
+      uses optimized Triton and is available under commercial license.
+      Contact: jorgeruizwilliams@gmail.com
+-----------------------------------------------------------------------
+
+MIT License - Free to use for validation and learning
 """
 
 import torch

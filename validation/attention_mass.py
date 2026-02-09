@@ -1,6 +1,6 @@
 """
-Attention Mass Validation
-=========================
+Attention Mass Validation (REFERENCE IMPLEMENTATION)
+====================================================
 
 Validates the Condensate Theorem: trained transformers concentrate
 attention mass on the Condensate Manifold:
@@ -9,7 +9,13 @@ attention mass on the Condensate Manifold:
 
 This script measures how much mass each component captures.
 
-MIT License - Free to use
+-----------------------------------------------------------------------
+NOTE: This is a REFERENCE IMPLEMENTATION for theorem validation.
+      The production Topological Attention kernel (157x+ speedup)
+      is available under commercial license: jorgeruizwilliams@gmail.com
+-----------------------------------------------------------------------
+
+MIT License - Free to use for validation and learning
 """
 
 import torch

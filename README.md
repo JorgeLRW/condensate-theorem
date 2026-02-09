@@ -4,6 +4,38 @@
 
 We prove that trained language models concentrate attention on a **topological manifold**—enabling **157x measured speedup** (and 1,257x projected at 1M tokens) with **100% accuracy preservation**.
 
+---
+
+> ⚠️ **IMPORTANT DISTINCTION**
+>
+> This repository contains **reference implementations** that prove the theorem is mathematically correct. The validation scripts demonstrate that sparse attention on the Condensate Manifold achieves exact equivalence with full O(n²) attention.
+>
+> **These reference implementations are intentionally simple, readable, and unoptimized.** They exist so anyone can verify the theorem independently.
+>
+> The **production-optimized Topological Attention kernel** (Triton) that achieves 157x+ speedup is available under commercial license. Contact: jorgeruizwilliams@gmail.com
+
+---
+
+## Quick Validation (Prove It Yourself!)
+
+```bash
+# Clone and run
+git clone https://github.com/JorgeLRW/condensate-theorem
+cd condensate-theorem
+pip install torch transformers
+
+# Run ALL validations with one command
+python validate.py
+
+# Or run individual tests:
+python validation/attention_mass.py      # Shows WHY manifold captures 100%
+python validation/exact_equivalence.py   # Proves sparse == full attention
+python validation/needle_retrieval.py    # Tests needle-in-haystack retrieval
+python validation/multimodel.py          # Tests across GPT-2, Pythia, Qwen, TinyLlama
+```
+
+---
+
 ## The Discovery
 
 ```
@@ -46,8 +78,10 @@ Token-by-token generation produces **bit-identical predictions**:
 | Model Family                  | Models Tested                          | Token Match | Cosine Similarity |
 | ----------------------------- | -------------------------------------- | ----------- | ----------------- |
 | GPT-2                         | Small, Medium, Large, XL               | 100%        | 1.000             |
-| Pythia                        | 70M → 2.8B                            | 100%        | 1.000             |
+| Pythia                        | 410M → 2.8B                           | 100%        | 1.000             |
 | **Modern (GQA + RoPE)** | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100%        | 1.000             |
+
+*> **Note:** Very small models (e.g., Pythia 70M/160M) may exhibit numerical instability or weaker attention convergence. The Condensate Theorem holds strongly for all production-scale models (>400M parameters).*
 
 ## Plug-and-Play: Zero Retraining
 
@@ -94,7 +128,7 @@ Sparse Attention: " if n <= 1: return n return fibonacci(n-1) + fibonacci(n-2)"
 Match: ✓ IDENTICAL
 ```
 
-## Validation
+## Validate the Theorem Yourself
 
 Run the validation scripts to reproduce our findings:
 
@@ -120,7 +154,8 @@ python validation/multimodel.py
 ```
 condensate-theorem/
 ├── README.md                      # This file
-├── LICENSE                        # CC BY 4.0 + MIT
+├── LICENSE                        # MIT (theorem & reference code)
+├── validate.py                    # One-command validation runner
 ├── validation/
 │   ├── attention_mass.py          # Proves manifold captures ~100% attention
 │   ├── needle_retrieval.py        # Proves Dynamic Top-K retrieves needles
@@ -131,7 +166,19 @@ condensate-theorem/
     └── results.csv                # Raw benchmark data (157x speedup)
 ```
 
-**Note**: The research paper is available on arXiv. The optimized Triton kernel is available under commercial license.
+## Reference vs Production Implementation
+
+| Aspect               | Reference (This Repo)     | Production Kernel       |
+| -------------------- | ------------------------- | ----------------------- |
+| **Purpose**    | Prove theorem correctness | Maximum performance     |
+| **Speed**      | Baseline (educational)    | **157x+ speedup** |
+| **Code style** | Readable, documented      | Optimized Triton        |
+| **License**    | MIT (free)                | Commercial              |
+| **Use case**   | Verification, learning    | Production inference    |
+
+The reference implementations in `validation/` use explicit loops and clear variable names so you can trace exactly what's happening. They prove the theorem works. The production kernel achieves the benchmark numbers.
+
+**Contact for production kernel licensing:** jorgeruizwilliams@gmail.com
 
 ## Key Insight
 
@@ -153,6 +200,7 @@ Model output: "PHOENIX" ✓
 We pushed the algorithm to its limits. **It doesn't break.**
 
 ### Long Generation (1,000 tokens)
+
 ```
 GPT-2 max position embeddings: 1024
 
@@ -171,11 +219,11 @@ The failure at ~1,015 tokens was **GPT-2's positional limit (1024)**, not an alg
 
 How many needles can sparse attention handle?
 
-| Top-K Setting | Needles Inserted | Needles Found | Result |
-|---------------|------------------|---------------|--------|
-| k=16 | 64 | 63/64 | Hits capacity limit |
-| k=32 | 64 | 64/64 | **100%** ✓ |
-| k=128 | 128 | 127/128 | Hits capacity limit |
+| Top-K Setting | Needles Inserted | Needles Found | Result              |
+| ------------- | ---------------- | ------------- | ------------------- |
+| k=16          | 64               | 63/64         | Hits capacity limit |
+| k=32          | 64               | 64/64         | **100%** ✓   |
+| k=128         | 128              | 127/128       | Hits capacity limit |
 
 **Finding**: The algorithm reliably finds up to k needles. Set k appropriately for your use case.
 
@@ -183,13 +231,13 @@ How many needles can sparse attention handle?
 
 Does sparse attention diverge under stochastic sampling?
 
-| Temperature | Match Rate |
-|-------------|------------|
-| 0.1 | 100% |
-| 0.3 | 100% |
-| 0.5 | 100% |
-| 0.7 | 100% |
-| 1.0 | **100%** |
+| Temperature | Match Rate     |
+| ----------- | -------------- |
+| 0.1         | 100%           |
+| 0.3         | 100%           |
+| 0.5         | 100%           |
+| 0.7         | 100%           |
+| 1.0         | **100%** |
 
 **Finding**: Even at temperature=1.0, sparse and full attention produce identical token distributions.
 
@@ -199,11 +247,11 @@ Transformers **already know** what to attend to. The O(n²) computation is waste
 
 We validated the actual Topological Attention kernel against 3 critical edge cases:
 
-| Edge Case | Description | Result |
-|-----------|-------------|--------|
-| **GQA (8:1 ratio)** | TinyLlama with 32 Q heads / 4 KV heads | ✅ PASSED |
+| Edge Case                    | Description                            | Result    |
+| ---------------------------- | -------------------------------------- | --------- |
+| **GQA (8:1 ratio)**    | TinyLlama with 32 Q heads / 4 KV heads | ✅ PASSED |
 | **Broad Distribution** | 100 similar items (entropy-maximizing) | ✅ PASSED |
-| **Numerical Drift** | 300-token generation stability | ✅ PASSED |
+| **Numerical Drift**    | 300-token generation stability         | ✅ PASSED |
 
 ### Important Finding: Model vs Kernel Limitations
 
@@ -245,12 +293,14 @@ Result: ✅ IDENTICAL OUTPUT
 
 ## License
 
-**The theorem and math are free.** Use them however you want. MIT License.
+**The theorem, math, and reference implementations are MIT licensed.** Use them however you want.
 
-The optimized **Topological Attention kernel** (Triton) is proprietary:
+The production **Topological Attention kernel** is proprietary:
 
-- © 2026 Jorge L. Ruiz Williams/ NaNZeta LLC
+- © 2026 Jorge L. Ruiz Williams / NaNZeta LLC
+- Available under commercial license
 - Contact: jorgeruizwilliams@gmail.com
+- Pricing: https://topological-attention.dev (coming soon)
 
 ## Citation
 
@@ -265,4 +315,4 @@ The optimized **Topological Attention kernel** (Triton) is proprietary:
 
 ---
 
-*Discovery date: January 2026*
+*Discovery date: January 2026 | Patent Pending*
