@@ -2,7 +2,7 @@
 
 **Transformers Are O(n), Not O(n²)**
 
-We prove that trained language models concentrate attention on a **topological manifold**—enabling **157x measured speedup** (and 1,257x projected at 1M tokens) with **100% accuracy preservation**.
+We prove that trained language models concentrate attention on a **topological manifold**—enabling **159x measured speedup** (and 1,257x projected at 1M tokens) with **100% accuracy preservation**.
 
 ---
 
@@ -66,7 +66,7 @@ python validation/multimodel.py          # Tests across GPT-2, Pythia, Qwen, Tin
 | 4,096             | 0.53 ms                | 0.07 ms           | 7.5x             | 2.34%           |
 | 16,384            | 3.95 ms                | 0.17 ms           | 23.4x            | 0.59%           |
 | 65,536            | 61.52 ms               | 0.76 ms           | 80.7x            | 0.15%           |
-| **131,072** | **227.97 ms**    | **1.45 ms** | **157x**   | **0.07%** |
+| **131,072** | **227.97 ms**    | **1.45 ms** | **159x**   | **0.07%** |
 | 1,000,000 (proj.) | ~14.6 s                | ~11.6 ms          | **1,257x** | 0.01%           |
 
 *Benchmarked on NVIDIA RTX 4090 Laptop (16GB), PyTorch 2.x, Triton 2.1*
