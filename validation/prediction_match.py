@@ -86,13 +86,20 @@ def full_attention_reference(Q, K, V):
 
 def test_prediction_match(model_name="gpt2", num_tokens=20):
     """
-    Test that sparse attention produces identical next-token predictions.
+    Test that sparse attention produces identical next-token predictions
+    by running both Full Attention and Condensate Sparse models simultaneously.
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    print(f"\nLoading {model_name}...")
-    model = GPT2LMHeadModel.from_pretrained(model_name, attn_implementation='eager')
-    model = model.to(device).eval()
+    print(f"\nLoading {model_name} (Full Attention and Condensate Sparse models)...")
+    model_full = GPT2LMHeadModel.from_pretrained(model_name, attn_implementation='eager').to(device).eval()
+    
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from exact_equivalence import build_sparse_gpt2
+    model_sparse = build_sparse_gpt2(window_size=64, top_k=32, device=device)
+    
     tokenizer = GPT2Tokenizer.from_pretrained(model_name)
     
     prompts = [
@@ -115,29 +122,23 @@ def test_prediction_match(model_name="gpt2", num_tokens=20):
         
         for step in range(num_tokens):
             with torch.no_grad():
-                # Get full attention prediction
-                outputs = model(input_ids, output_attentions=True)
-                full_logits = outputs.logits[0, -1, :]
+                out_full = model_full(input_ids)
+                out_sparse = model_sparse(input_ids)
+                
+                full_logits = out_full.logits[0, -1, :]
+                sparse_logits = out_sparse.logits[0, -1, :]
+                
                 full_top1 = full_logits.argmax().item()
-                full_top5 = full_logits.topk(5).indices.tolist()
-                
-                # Get hidden states and compute sparse attention manually
-                # For simplicity, we compare logits directly
-                # The model internally uses our sparse pattern naturally
-                
-                # In a full implementation, we'd replace the attention
-                # For validation, we verify the MODEL's natural sparsity
-                
-                sparse_top1 = full_top1  # Model already sparse internally
-                sparse_top5 = full_top5
+                sparse_top1 = sparse_logits.argmax().item()
+                sparse_top5 = set(sparse_logits.topk(5).indices.tolist())
             
             if sparse_top1 == full_top1:
                 top1_matches += 1
             if full_top1 in sparse_top5:
                 top5_matches += 1
             
-            # Generate next token
-            next_token = torch.tensor([[full_top1]], device=device)
+            # Autoregressively advance using the predicted token
+            next_token = torch.tensor([[sparse_top1]], device=device)
             input_ids = torch.cat([input_ids, next_token], dim=1)
         
         print(f"Top-1 match: {top1_matches}/{num_tokens} ({100*top1_matches/num_tokens:.1f}%)")
@@ -145,6 +146,10 @@ def test_prediction_match(model_name="gpt2", num_tokens=20):
         
         if top1_matches < num_tokens:
             all_match = False
+            
+    del model_full, model_sparse
+    if device.type == 'cuda':
+        torch.cuda.empty_cache()
     
     return all_match
 
@@ -203,12 +208,13 @@ def test_attention_output_similarity():
     # Measure condensate
     seq_len = inputs['input_ids'].shape[1]
     pos0_mass = last_token_attn[0].item()
-    window_mass = last_token_attn[-64:].sum().item()
+    w_start = max(1, seq_len - 64)
+    window_mass = last_token_attn[w_start:].sum().item()
     
     print(f"Attention to pos-0: {pos0_mass*100:.1f}%")
     print(f"Attention to window: {window_mass*100:.1f}%")
     print(f"Condensate total: {(pos0_mass + window_mass)*100:.1f}%")
-    print("\n→ Real models HAVE the condensate pattern!")
+    print("\n-> Real models exhibit strong attention concentration!")
 
 
 def main():
@@ -226,9 +232,9 @@ def main():
     
     print("\n" + "=" * 70)
     if success:
-        print("✓ VALIDATION PASSED: Sparse attention matches full attention")
+        print("[PASS] VALIDATION PASSED: Sparse attention matches full attention")
     else:
-        print("✗ VALIDATION FAILED: Mismatch detected")
+        print("[FAIL] VALIDATION FAILED: Mismatch detected")
     print("=" * 70)
 
 

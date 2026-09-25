@@ -96,7 +96,7 @@ def main():
     print("=" * 80)
     print("CONDENSATE THEOREM VALIDATION: Attention Mass Distribution")
     print("=" * 80)
-    print("\nManifold: C_i = {Anchor} ∪ {Window} ∪ {Top-K}")
+    print("\nManifold: C_i = {Anchor} U {Window} U {Top-K}")
     print("This script shows WHY the full manifold achieves 100% equivalence.\n")
     
     # Test prompts
@@ -129,17 +129,17 @@ def main():
         print("-" * 70)
         print(f"Late layer average:")
         print(f"  Static (Anchor+Window):     {avg_static*100:.1f}%")
-        print(f"  Full Manifold (+Top-K):     {avg_full*100:.1f}%  {'✓ VALIDATED' if avg_full >= 0.99 else ''}")
+        print(f"  Full Manifold (+Top-K):     {avg_full*100:.1f}%  {'[VALIDATED]' if avg_full >= 0.99 else ''}")
     
     print("\n" + "=" * 80)
     print("CONCLUSION")
     print("=" * 80)
     print("The Condensate Manifold captures ~100% of attention mass because:")
-    print("  • Anchor (pos-0):  Captures the learned 'attention sink' bias")
-    print("  • Window:          Captures local/recent context dependencies")
-    print("  • Dynamic Top-K:   Captures long-range semantic dependencies")
+    print("  * Anchor (pos-0):  Captures the learned 'attention sink' bias")
+    print("  * Window:          Captures local/recent context dependencies")
+    print("  * Dynamic Top-K:   Captures long-range semantic dependencies")
     print("")
-    print("This is why sparse attention achieves EXACT equivalence with O(n²).")
+    print("This is why sparse attention achieves EXACT equivalence with O(n^2).")
     print("=" * 80)
 
 

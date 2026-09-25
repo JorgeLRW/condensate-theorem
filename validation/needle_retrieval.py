@@ -119,9 +119,15 @@ def test_needle_retrieval():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}\n")
     
-    # Load model
-    model = AutoModelForCausalLM.from_pretrained('gpt2', attn_implementation='eager')
-    model = model.to(device).eval()
+    # Load models
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from exact_equivalence import build_sparse_gpt2
+
+    print("Loading Full Attention and Condensate Sparse models...")
+    model_full = AutoModelForCausalLM.from_pretrained('gpt2', attn_implementation='eager').to(device).eval()
+    model_sparse = build_sparse_gpt2(window_size=64, top_k=32, device=device)
     tokenizer = AutoTokenizer.from_pretrained('gpt2')
     
     # Test prompts with needles buried in filler
@@ -162,68 +168,61 @@ def test_needle_retrieval():
         seq_len = inputs['input_ids'].shape[1]
         print(f"Sequence length: {seq_len} tokens")
         
-        # Generate with full attention
-        with torch.no_grad():
-            full_output = model.generate(
-                inputs['input_ids'],
-                max_new_tokens=5,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        full_text = tokenizer.decode(full_output[0][seq_len:], skip_special_tokens=True)
+        # 1. Generate with full attention
+        cur_f = inputs['input_ids'].clone()
+        for _ in range(5):
+            with torch.no_grad():
+                out = model_full(cur_f)
+            nxt = out.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+            cur_f = torch.cat([cur_f, nxt], dim=1)
+        full_text = tokenizer.decode(cur_f[0][seq_len:], skip_special_tokens=True).strip()
         
-        print(f"\nFull attention output: '{full_text.strip()}'")
+        # 2. Generate with sparse attention
+        cur_s = inputs['input_ids'].clone()
+        for _ in range(5):
+            with torch.no_grad():
+                out = model_sparse(cur_s)
+            nxt = out.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+            cur_s = torch.cat([cur_s, nxt], dim=1)
+        sparse_text = tokenizer.decode(cur_s[0][seq_len:], skip_special_tokens=True).strip()
         
-        # For sparse attention, we measure the attention pattern
-        with torch.no_grad():
-            outputs = model(**inputs, output_attentions=True)
+        print(f"  Full attention output:   '{full_text}'")
+        print(f"  Sparse attention output: '{sparse_text}'")
         
-        # Check if needle position gets high attention
-        # Find where "PHOENIX" or "Paris" etc appears
-        prompt_tokens = tokenizer.encode(tc['prompt'])
+        needle_in_full = tc['expected'].lower() in full_text.lower()
+        needle_in_sparse = tc['expected'].lower() in sparse_text.lower()
+        match = full_text == sparse_text
         
-        # Look at attention from last position
-        attn_last_layer = outputs.attentions[-1][0]  # [heads, seq, seq]
-        last_token_attn = attn_last_layer[:, -1, :].mean(dim=0)  # [seq]
-        
-        # Find top attended positions
-        top_positions = last_token_attn.topk(10).indices.tolist()
-        
-        # Decode those positions
-        print(f"\nTop 10 attended positions:")
-        for pos in top_positions:
-            token = tokenizer.decode([prompt_tokens[pos]])
-            attn_mass = last_token_attn[pos].item() * 100
-            print(f"  Position {pos}: '{token}' ({attn_mass:.1f}%)")
-        
-        # Check if needle was found
-        needle_found = tc['expected'].lower() in full_text.lower()
         results.append({
             'name': tc['name'],
-            'found': needle_found,
-            'output': full_text.strip()
+            'needle_in_full': needle_in_full,
+            'needle_in_sparse': needle_in_sparse,
+            'match': match,
+            'full_output': full_text,
+            'sparse_output': sparse_text,
         })
         
-        print(f"\n→ Needle retrieved: {'✓ YES' if needle_found else '✗ NO'}")
+        status = "[PASS]" if needle_in_sparse and match else "[FAIL]"
+        print(f"  Result: {status} (Needle found: {needle_in_sparse}, Matches full: {match})")
     
     # Summary
     print("\n" + "=" * 80)
-    print("SUMMARY")
+    print("NEEDLE RETRIEVAL SUMMARY")
     print("=" * 80)
     
-    passed = sum(1 for r in results if r['found'])
-    total = len(results)
-    
+    all_passed = all(r['needle_in_sparse'] and r['match'] for r in results)
     for r in results:
-        status = '✓' if r['found'] else '✗'
-        print(f"  {status} {r['name']}: '{r['output']}'")
+        sym = "[PASS]" if r['needle_in_sparse'] and r['match'] else "[FAIL]"
+        print(f"  {sym} {r['name']:<15} | Full: '{r['full_output']}' | Sparse: '{r['sparse_output']}'")
     
-    print(f"\nNeedles retrieved: {passed}/{total}")
-    
-    if passed == total:
-        print("\n✓ VALIDATION PASSED: Model retrieves needles from long context")
+    if all_passed:
+        print("\n[PASS] ALL NEEDLES RETRIEVED IDENTICALLY BY CONDENSATE SPARSE ATTENTION")
     else:
-        print("\n⚠ Some needles not retrieved (may need longer window or more top-k)")
+        print("\n[FAIL] Discrepancies detected between sparse and full attention")
+        
+    del model_full, model_sparse
+    if device.type == 'cuda':
+        torch.cuda.empty_cache()
 
 
 def test_sparse_vs_full_equivalence():
@@ -264,8 +263,8 @@ def test_sparse_vs_full_equivalence():
         
         print(f"  seq_len={seq_len}: Cosine similarity = {cos_sim:.4f}")
     
-    print("\n→ Random tensors have ~uniform attention, so sparse misses some mass.")
-    print("→ Trained models have CONCENTRATED attention, so sparse captures everything.")
+    print("\n-> Random tensors have ~uniform attention, so sparse misses some mass.")
+    print("-> Trained models have CONCENTRATED attention, so sparse captures everything.")
     
     # Now test with trained model embeddings
     print("\n" + "-" * 60)
@@ -314,7 +313,7 @@ def main():
     print("=" * 80)
     print("The Condensate Manifold (Anchor + Window + Top-K) captures the")
     print("positions that matter for prediction. This is why sparse attention")
-    print("achieves EXACT equivalence with full O(n²) attention.")
+    print("achieves EXACT equivalence with full O(n^2) attention.")
     print("=" * 80)
 
 

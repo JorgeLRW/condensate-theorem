@@ -126,7 +126,7 @@ def main():
         
         results.append(result)
         
-        status = "✓ PASS" if result['validated'] else "✗ FAIL"
+        status = "[PASS]" if result['validated'] else "[FAIL]"
         if 'note' in result:
             status += f" ({result['note']})"
         
@@ -145,13 +145,13 @@ def main():
     print("Theorem strongly holds for all production-scale models (>400M params).")
     
     if passed >= total - 2:  # Allow for small model failures
-        print("\n✓ CONDENSATE THEOREM VALIDATED ACROSS MAJOR ARCHITECTURES")
-        print("  → Attention concentrates in pos-0 + local window pattern")
-        print("  → Pattern is architecture-independent")
-        print("  → O(n²) → O(n) optimization is theoretically sound")
+        print("\n[PASSED] CONDENSATE THEOREM VALIDATED ACROSS MAJOR ARCHITECTURES")
+        print("  -> Attention concentrates in pos-0 + local window pattern")
+        print("  -> Pattern is architecture-independent")
+        print("  -> O(n^2) -> O(n) optimization is theoretically sound")
     else:
-        print("\n⚠ Some models showed lower condensate mass")
-        print("  → May need larger window size for these models")
+        print("\n[WARNING] Some models showed lower condensate mass")
+        print("  -> May need larger window size for these models")
 
 
 if __name__ == "__main__":

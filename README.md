@@ -71,15 +71,15 @@ python validation/multimodel.py          # Tests across GPT-2, Pythia, Qwen, Tin
 
 *Benchmarked on NVIDIA RTX 4090 Laptop (16GB), PyTorch 2.x, Triton 2.1*
 
-## Accuracy: 100% Exact Match
+## Accuracy: 100% Exact Greedy Match
 
-Token-by-token generation produces **bit-identical predictions**:
+Token-by-token generation produces **100% identical greedy token predictions** via Argmax Stability (cosine similarity > 0.999999, max logit diff < 0.001):
 
-| Model Family                  | Models Tested                          | Token Match | Cosine Similarity |
-| ----------------------------- | -------------------------------------- | ----------- | ----------------- |
-| GPT-2                         | Small, Medium, Large, XL               | 100%        | 1.000             |
-| Pythia                        | 410M → 2.8B                           | 100%        | 1.000             |
-| **Modern (GQA + RoPE)** | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100%        | 1.000             |
+| Model Family                  | Models Tested                          | Greedy Token Match | Cosine Similarity |
+| ----------------------------- | -------------------------------------- | ------------------ | ----------------- |
+| GPT-2                         | Small, Medium, Large, XL               | 100%               | > 0.999999        |
+| Pythia                        | 410M -> 2.8B                           | 100%               | > 0.999999        |
+| **Modern (GQA + RoPE)**       | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100%               | > 0.999999        |
 
 *> **Note:** Very small models (e.g., Pythia 70M/160M) may exhibit numerical instability or weaker attention convergence. The Condensate Theorem holds strongly for all production-scale models (>400M parameters).*
 

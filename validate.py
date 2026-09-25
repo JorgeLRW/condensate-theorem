@@ -35,31 +35,31 @@ def run_validation(script_name: str, description: str) -> bool:
         )
         return True
     except subprocess.CalledProcessError:
-        print(f"  ❌ FAILED: {script_name}")
+        print(f"  [FAILED]: {script_name}")
         return False
     except subprocess.TimeoutExpired:
-        print(f"  ⏱️ TIMEOUT: {script_name}")
+        print(f"  [TIMEOUT]: {script_name}")
         return False
     except Exception as e:
-        print(f"  ⚠️ ERROR: {e}")
+        print(f"  [ERROR]: {e}")
         return False
 
 
 def main():
     print("""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║              THE CONDENSATE THEOREM - VALIDATION SUITE                       ║
-║                                                                              ║
-║    Proving: Trained transformers are O(n), not O(n²)                         ║
-║                                                                              ║
-║    This repository contains REFERENCE IMPLEMENTATIONS that validate          ║
-║    the theorem's mathematical correctness. The production kernel             ║
-║    (157x+ speedup) is available under commercial license.                    ║
-║                                                                              ║
-║    Contact: jorgeruizwilliams@gmail.com                                      ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++------------------------------------------------------------------------------+
+|                                                                              |
+|              THE CONDENSATE THEOREM - VALIDATION SUITE                       |
+|                                                                              |
+|    Proving: Trained transformers are O(n), not O(n^2)                        |
+|                                                                              |
+|    This repository contains REFERENCE IMPLEMENTATIONS that validate          |
+|    the theorem's mathematical correctness. The production kernel             |
+|    (157x+ speedup) is available under commercial license.                    |
+|                                                                              |
+|    Contact: jorgeruizwilliams@gmail.com                                      |
+|                                                                              |
++------------------------------------------------------------------------------+
 """)
     
     validations = [
@@ -85,7 +85,7 @@ def main():
     total = len(results)
     
     for script, success in results:
-        status = "✅ PASSED" if success else "❌ FAILED"
+        status = "[PASSED]" if success else "[FAILED]"
         print(f"  {script:<25} {status}")
     
     print("-" * 80)
@@ -94,24 +94,24 @@ def main():
     
     if passed == total:
         print("""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║   ✅ THEOREM VALIDATED                                                       ║
-║                                                                              ║
-║   The Condensate Manifold captures ~100% of attention mass.                  ║
-║   Sparse attention produces IDENTICAL outputs to full O(n²) attention.       ║
-║   The pattern holds across GPT-2, Pythia, Qwen, and TinyLlama.               ║
-║                                                                              ║
-║   This reference implementation PROVES the theorem works.                    ║
-║   The production Topological Attention kernel achieves 157x+ speedup.        ║
-║                                                                              ║
-║   License the production kernel: jorgeruizwilliams@gmail.com                 ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++------------------------------------------------------------------------------+
+|                                                                              |
+|   [PASSED] THEOREM VALIDATED                                                 |
+|                                                                              |
+|   The Condensate Manifold captures ~100% of attention mass.                  |
+|   Sparse attention produces IDENTICAL outputs to full O(n^2) attention.      |
+|   The pattern holds across GPT-2, Pythia, Qwen, and TinyLlama.               |
+|                                                                              |
+|   This reference implementation PROVES the theorem works.                    |
+|   The production Topological Attention kernel achieves 157x+ speedup.        |
+|                                                                              |
+|   License the production kernel: jorgeruizwilliams@gmail.com                 |
+|                                                                              |
++------------------------------------------------------------------------------+
 """)
     else:
         print("""
-⚠️  Some validations failed. This may be due to:
+[WARNING] Some validations failed. This may be due to:
    - Missing dependencies (pip install torch transformers)
    - GPU/CPU memory constraints
    - Network issues downloading models
