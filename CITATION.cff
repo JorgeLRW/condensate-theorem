@@ -18,9 +18,10 @@ abstract: |
   Attention-mass concentration creates an opportunity for sparse decoding, but
   retained mass alone does not guarantee a stable greedy decision. This work
   gives an exact omitted-mass identity and a sufficient downstream margin
-  condition, then characterizes a query-dependent mean-pooled block selector.
-  On Qwen2-0.5B, none of 60 paired runs remains identical to dense decoding
-  through 128 tokens, while distributional quality is distinct.
+  condition (the Condensation Principle), then tests the principle with a
+  query-dependent mean-pooled block selector. On Qwen2-0.5B, none of 60 paired
+  runs remains identical to dense decoding through 128 tokens, while
+  distributional quality depends on context length and support size.
 preferred-citation:
   type: article
   authors:
