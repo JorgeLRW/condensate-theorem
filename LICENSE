@@ -19,18 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-================================================================================
-NOTE ON PROPRIETARY KERNEL
-================================================================================
-
-The Condensate Theorem and all mathematical results are FREE to use.
-Implement the ideas however you want.
-
-The optimized Topological Attention kernel (Triton implementation) referenced
-in benchmarks is NOT included in this repository. It is proprietary:
-
-    © 2026 Jorge L. Ruiz Williams / NaNZeta LLC
-
-For kernel licensing: jorgeruizwilliams@gmail.com
-Patent Pending

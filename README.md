@@ -1,318 +1,155 @@
-# The Condensate Theorem
+# Attention-Mass Condensation for Sparse Decoding
 
-**Transformers Are O(n), Not O(n²)**
+Reference implementation of the selector, metrics, and survival sweep from
+*Attention-Mass Condensation for Sparse Decoding: Margin Stability, Query-Dependent Retrieval, and Operating Limits*
+(Jorge L. Ruiz Williams).
 
-We prove that trained language models concentrate attention on a **topological manifold**—enabling **159x measured speedup** (and 1,257x projected at 1M tokens) with **100% accuracy preservation**.
+The paper's central claim is conditional, not a blanket claim that trained attention can be sparsified.
+Sparse attention preserves the dense greedy decision only if:
 
----
+1. attention concentrates on a small, query-dependent support, **and**
+2. the omitted contribution stays inside the downstream decision margin.
 
-> ⚠️ **IMPORTANT DISTINCTION**
->
-> This repository contains **reference implementations** that prove the theorem is mathematically correct. The validation scripts demonstrate that sparse attention on the Condensate Manifold achieves exact equivalence with full O(n²) attention.
->
-> **These reference implementations are intentionally simple, readable, and unoptimized.** They exist so anyone can verify the theorem independently.
->
-> The **production-optimized Topological Attention kernel** (Triton) that achieves 157x+ speedup is available under commercial license. Contact: jorgeruizwilliams@gmail.com
+On Qwen2-0.5B, the second condition fails at the supports tested here, so none of the 60 paired runs stays identical to dense decoding through 128 tokens. See [Results](#results).
 
----
+## Contents
 
-## Quick Validation (Prove It Yourself!)
+| Path | What it is |
+|---|---|
+| [condensate/selector.py](condensate/selector.py) | Block budget, block ranges, KV-group selector, refresh rule, and additive decode mask |
+| [condensate/decode.py](condensate/decode.py) | Layer-local sparse decode controller, dense reference, and paired survival metrics |
+| [condensate/data.py](condensate/data.py) | WikiText-2 prefix construction |
+| [scripts/run_survival.py](scripts/run_survival.py) | Survival sweep CLI; defaults reproduce the paper's 60-run grid |
+| [tests/test_selector.py](tests/test_selector.py) | CPU unit checks: block budget, sharing, refresh cadence, mask, omitted-mass identity |
+| [validate.py](validate.py) | Runs the unit tests; with `--smoke`, reruns one paired case and compares it to the archive |
+| [results/qwen_survival_clean.json](results/qwen_survival_clean.json) | The 60-run archived sweep behind the paper's survival table |
+| [results/rerun_2048_prompt0.json](results/rerun_2048_prompt0.json) | Rerun of the 2K / prompt 0 / S=97,769 case from this repository |
+
+## Method
+
+### Omitted-mass identity
+
+Let `C` be the retained keys and `D` the omitted keys, with `ε = a(D)` the dense attention mass on `D`.
+Let `o_C` and `o_D` be value averages normalized within `C` and `D`. Then
+
+```
+o_full = (1 − ε) o_C + ε o_D
+Δo = o_sparse − o_full = ε (o_C − o_D)
+‖Δo‖₂ ≤ 2 ε V_max
+```
+
+Retained mass alone does not control `Δo`: the omitted value directions and the size of `o_C − o_D` also matter.
+
+### Downstream margin condition
+
+Let `δ = Σ_l κ_l E_l`, where `E_l = (Σ_h (2 ε_{l,h} V_{max,l,h})²)^{1/2}` and `κ_l` is a layer sensitivity constant.
+If `2δ < γ`, where `γ` is the dense top-1 logit margin, the greedy argmax is preserved.
+This is a sufficient condition, not a necessary one. The `κ_l` are not practically bounded, so the condition is not
+checked by this code.
+
+### Selector (kv_group variant)
+
+Each decode step, for each layer, the selector keeps:
+
+- the anchor (position 0),
+- the last `W = 64` positions,
+- `r` distant blocks of `M = 16` positions, chosen per KV head.
+
+Distant blocks are scored by `s_b = q·μ_b / √d`, where `μ_b` is the mean of the post-RoPE cached keys in block `b`
+and `q` is the mean post-RoPE query of the query-head group that shares the KV head.
+The selection is shared across that group.
+
+Nominal supports and block counts:
+
+| Support `S` | Distant blocks `r` | Positions per KV head (anchor + window + blocks) |
+|---|---|---|
+| 97 | 2 | 1 + 64 + 32 |
+| 193 | 8 | 1 + 64 + 128 |
+| 385 | 20 | 1 + 64 + 320 |
+| 769 | 44 | 1 + 64 + 704 |
+
+With reuse `R`, distant blocks are reselected at one-based decode steps `1, 1+R, 1+2R, …`. The paper's sweep uses `R = 1`.
+
+The cache is not truncated. The controller adds a per-head additive mask to each layer's attention during 1-token decode steps.
+Anchor, window, and selected blocks are kept; every other cached key is masked.
+
+The paper also specifies `shared`, `head_union`, `rerank`, and `per_head` selector variants. This repository implements only `kv_group`,
+which is the variant evaluated in the survival sweep.
+
+### Metrics
+
+Both the dense and sparse runs start from the same dense-prefilled cache and the same first token.
+
+- **Survival**: whether the free-running sparse greedy output matches the dense greedy output exactly for 128 tokens.
+  `Tdiv` is the one-based step of the first mismatch.
+- **Teacher-forced match (TF)**: sparse argmax agreement with the dense tokens, teacher-forced on the dense continuation, excluding the shared first token.
+- **ΔPPL**: `100 · (exp(mean sparse NLL) − exp(mean dense NLL)) / exp(mean dense NLL)`, computed on the dense continuation
+  (teacher-forced, not free-running, not held-out perplexity).
+
+## Results
+
+These are the paper's headline numbers for Qwen2-0.5B: 3 contexts (2K, 8K, 16K) × 4 supports (97, 193, 385, 769) × 5 WikiText-2 prefixes per context, with `R = 1` and 128 greedy tokens (60 paired runs). The full per-run table is in the paper's `tab:decode_survival` and in [results/qwen_survival_clean.json](results/qwen_survival_clean.json).
+
+- **Survival**: 0 of 60 runs match dense decoding exactly through 128 tokens.
+- **Distributional quality**: for `S ≥ 193`, 7 of 9 context-support cells have median teacher-forced ΔPPL within 5% of dense.
+  Prompt-level ranges include severe 16K outliers: up to +9877% at `S = 97` and +152% at `S = 769`.
+- **Warning regime**: all 7 runs with TF below 70% have ΔPPL above +100%. These come from two prefixes (0 and 4, at 16K).
+  This suggests a warning regime, not a validated threshold.
+
+The archive includes 15 prefixes and 4 supports, so the 60 runs are paired measurements over 15 prefixes, not 60 independent prompts.
+
+### Smoke rerun from this repository
+
+`python validate.py --smoke` reruns 2K / prompt 0 / `S = 97, 769` and compares the results to the archive.
+On the reference machine (RTX 4090 Laptop GPU, 16 GB, torch 2.6.0+cu124, transformers 4.57.1, float16, SDPA) every compared field matches the archived row.
+The rerun takes about 5 minutes, including the dense reference.
+
+| Support | Tdiv | TF | ΔPPL |
+|---|---|---|---|
+| 97 | 2 | 93.70% | +5.07% |
+| 769 | 22 | 98.43% | −0.34% |
+
+Hardware or library differences can change float16 results. A `DIFF` line from `validate.py` means the rerun differs from the archive beyond the tolerance (1e-3); it is not a failure of the paper's claim.
+
+## Reproducing
+
+Requirements: a CUDA GPU with enough memory for Qwen2-0.5B in float16, Python 3.10+, and the packages in [requirements.txt](requirements.txt).
 
 ```bash
-# Clone and run
-git clone https://github.com/JorgeLRW/condensate-theorem
-cd condensate-theorem
-pip install torch transformers
+pip install -r requirements.txt
 
-# Run ALL validations with one command
+# CPU unit checks (selector, mask, omitted-mass identity)
 python validate.py
 
-# Or run individual tests:
-python validation/attention_mass.py      # Shows WHY manifold captures 100%
-python validation/exact_equivalence.py   # Proves sparse == full attention
-python validation/needle_retrieval.py    # Tests needle-in-haystack retrieval
-python validation/multimodel.py          # Tests across GPT-2, Pythia, Qwen, TinyLlama
+# GPU: rerun one paired case and compare to the archive
+python validate.py --smoke
+
+# GPU: the paper's full 60-run sweep (writes JSON after every row)
+python scripts/run_survival.py --output results/survival_rerun.json
+
+# If a run stops partway, continue it from the saved rows (same settings required)
+python scripts/run_survival.py --resume --output results/survival_rerun.json
 ```
 
----
-
-## The Discovery
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  THE CONDENSATE MANIFOLD                                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  𝒞ᵢ = {Anchor} ∪ {Local Window} ∪ {Dynamic Top-K}                   │
-│                                                                     │
-│  Position 0 (Anchor):        36.9%  ████████████████████            │
-│  Local window (last 64):     50.9%  ██████████████████████████      │
-│  Dynamic Top-K (needles):     6.3%  ███                             │
-│  ───────────────────────────────────────────────────────────────    │
-│  MANIFOLD TOTAL:             94.1%                                  │
-│                                                                     │
-│  Remaining positions:         5.9%  ███  ← Effectively ZERO         │
-│                                                                     │
-│  → The O(n²) computation is 94% REDUNDANT                           │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-## Benchmark Results
-
-| Sequence Length   | Flash Attention (SDPA) | Sparse (Triton)   | Speedup          | Sparsity        |
-| ----------------- | ---------------------- | ----------------- | ---------------- | --------------- |
-| 1,024             | 0.04 ms                | 0.04 ms           | 1.0x             | 9.38%           |
-| 4,096             | 0.53 ms                | 0.07 ms           | 7.5x             | 2.34%           |
-| 16,384            | 3.95 ms                | 0.17 ms           | 23.4x            | 0.59%           |
-| 65,536            | 61.52 ms               | 0.76 ms           | 80.7x            | 0.15%           |
-| **131,072** | **227.97 ms**    | **1.45 ms** | **159x**   | **0.07%** |
-| 1,000,000 (proj.) | ~14.6 s                | ~11.6 ms          | **1,257x** | 0.01%           |
-
-*Benchmarked on NVIDIA RTX 4090 Laptop (16GB), PyTorch 2.x, Triton 2.1*
-
-## Accuracy: 100% Exact Match
-
-Token-by-token generation produces **bit-identical predictions**:
-
-| Model Family                  | Models Tested                          | Token Match | Cosine Similarity |
-| ----------------------------- | -------------------------------------- | ----------- | ----------------- |
-| GPT-2                         | Small, Medium, Large, XL               | 100%        | 1.000             |
-| Pythia                        | 410M → 2.8B                           | 100%        | 1.000             |
-| **Modern (GQA + RoPE)** | Qwen2-0.5B, TinyLlama-1.1B, Mistral-7B | 100%        | 1.000             |
-
-*> **Note:** Very small models (e.g., Pythia 70M/160M) may exhibit numerical instability or weaker attention convergence. The Condensate Theorem holds strongly for all production-scale models (>400M parameters).*
-
-## Plug-and-Play: Zero Retraining
-
-This is **not** a new architecture. It's a discovery about existing models:
-
-- ✅ Works on frozen pre-trained weights
-- ✅ No fine-tuning required
-- ✅ No architectural changes
-- ✅ Drop-in replacement for standard attention
-
-The sparsity is **already learned** by the model. We simply respect it.
-
-## The Theorem
-
-**Definition (Condensate Manifold):** For query position $i$, the attention topology is supported on:
-
-$$
-\mathcal{C}_i = \underbrace{\{0\}}_{\text{Anchor}} \cup \underbrace{\{j : i-W+1 \leq j \leq i\}}_{\text{Local Window}} \cup \underbrace{\text{Top-}k(\{S_{ij}\})}_{\text{Dynamic}}
-$$
-
-**Theorem (Condensate):** For trained autoregressive LLMs, attention is topologically sparse. There exists a manifold $\mathcal{C}$ such that:
-
-$$
-\text{CosineSim}(\text{Attention}_{\mathcal{C}}, \text{Attention}_{\text{Full}}) = 1.0
-$$
-
-**Corollary (Finite Support):** As sequence length $n \to \infty$, the cardinality $|\mathcal{C}_i|$ remains bounded by a constant. The semantic capacity of a single query is finite.
-
-## Qualitative Proof: Exact Text Output
-
-```
-PROMPT: "The secret code is PHOENIX. [filler...] What is the secret code?"
-
-Full Attention Output:  "PHOENIX"
-Sparse Attention Output: "PHOENIX"
-Match: ✓ IDENTICAL
-```
-
-```
-PROMPT: "def fibonacci(n):"
-
-Full Attention:  " if n <= 1: return n return fibonacci(n-1) + fibonacci(n-2)"
-Sparse Attention: " if n <= 1: return n return fibonacci(n-1) + fibonacci(n-2)"
-Match: ✓ IDENTICAL
-```
-
-## Validate the Theorem Yourself
-
-Run the validation scripts to reproduce our findings:
-
-```bash
-# Install dependencies
-pip install torch transformers
-
-# 1. Validate attention mass distribution (shows WHY manifold works)
-python validation/attention_mass.py
-
-# 2. Validate needle retrieval (tests Dynamic Top-K component)
-python validation/needle_retrieval.py
-
-# 3. Test EXACT generation equivalence (sparse vs full attention)
-python validation/exact_equivalence.py
-
-# 4. Multi-model validation (GPT-2, Pythia, Qwen2, TinyLlama)
-python validation/multimodel.py
-```
-
-## Repository Structure
-
-```
-condensate-theorem/
-├── README.md                      # This file
-├── LICENSE                        # MIT (theorem & reference code)
-├── validate.py                    # One-command validation runner
-├── validation/
-│   ├── attention_mass.py          # Proves manifold captures ~100% attention
-│   ├── needle_retrieval.py        # Proves Dynamic Top-K retrieves needles
-│   ├── exact_equivalence.py       # Proves sparse == full (token-by-token)
-│   ├── prediction_match.py        # Legacy accuracy test
-│   └── multimodel.py              # Tests across model families
-└── benchmarks/
-    └── results.csv                # Raw benchmark data (157x speedup)
-```
-
-## Reference vs Production Implementation
-
-| Aspect               | Reference (This Repo)     | Production Kernel       |
-| -------------------- | ------------------------- | ----------------------- |
-| **Purpose**    | Prove theorem correctness | Maximum performance     |
-| **Speed**      | Baseline (educational)    | **157x+ speedup** |
-| **Code style** | Readable, documented      | Optimized Triton        |
-| **License**    | MIT (free)                | Commercial              |
-| **Use case**   | Verification, learning    | Production inference    |
-
-The reference implementations in `validation/` use explicit loops and clear variable names so you can trace exactly what's happening. They prove the theorem works. The production kernel achieves the benchmark numbers.
-
-**Contact for production kernel licensing:** jorgeruizwilliams@gmail.com
-
-## Key Insight
-
-The model **already knows** what to attend to. The selection criterion is the attention score itself ($Q \cdot K^T$). High scores = important positions. We simply skip the positions the model would ignore anyway.
-
-```
-Test: "The secret code is PHOENIX. [filler text] What is the secret code?"
-
-Attention to anchor (pos-0):    36.9%
-Attention to needle (PHOENIX):  44.1%
-Attention to filler:             5.0%  ← Almost nothing!
-Attention to question:          14.0%
-
-Model output: "PHOENIX" ✓
-```
-
-## Stress Test Results
-
-We pushed the algorithm to its limits. **It doesn't break.**
-
-### Long Generation (1,000 tokens)
-
-```
-GPT-2 max position embeddings: 1024
-
-Token 200: still matching (seq_len=208)
-Token 400: still matching (seq_len=408)  
-Token 600: still matching (seq_len=608)
-Token 800: still matching (seq_len=808)
-
-SUCCESS: 1000 tokens with 100% match!
-Final sequence length: 1007 tokens
-```
-
-The failure at ~1,015 tokens was **GPT-2's positional limit (1024)**, not an algorithm failure.
-
-### Multi-Needle Saturation Test
-
-How many needles can sparse attention handle?
-
-| Top-K Setting | Needles Inserted | Needles Found | Result              |
-| ------------- | ---------------- | ------------- | ------------------- |
-| k=16          | 64               | 63/64         | Hits capacity limit |
-| k=32          | 64               | 64/64         | **100%** ✓   |
-| k=128         | 128              | 127/128       | Hits capacity limit |
-
-**Finding**: The algorithm reliably finds up to k needles. Set k appropriately for your use case.
-
-### Temperature Sampling Stress Test
-
-Does sparse attention diverge under stochastic sampling?
-
-| Temperature | Match Rate     |
-| ----------- | -------------- |
-| 0.1         | 100%           |
-| 0.3         | 100%           |
-| 0.5         | 100%           |
-| 0.7         | 100%           |
-| 1.0         | **100%** |
-
-**Finding**: Even at temperature=1.0, sparse and full attention produce identical token distributions.
-
-Transformers **already know** what to attend to. The O(n²) computation is wasted work.
-
-## Edge Case Validation (Kernel Tests)
-
-We validated the actual Topological Attention kernel against 3 critical edge cases:
-
-| Edge Case                    | Description                            | Result    |
-| ---------------------------- | -------------------------------------- | --------- |
-| **GQA (8:1 ratio)**    | TinyLlama with 32 Q heads / 4 KV heads | ✅ PASSED |
-| **Broad Distribution** | 100 similar items (entropy-maximizing) | ✅ PASSED |
-| **Numerical Drift**    | 300-token generation stability         | ✅ PASSED |
-
-### Important Finding: Model vs Kernel Limitations
-
-During testing, we observed needle retrieval failures at longer contexts (~700 tokens). Investigation revealed this is a **model capability limitation**, not a kernel issue:
-
-```
-TinyLlama Needle Retrieval (FULL O(n²) attention):
-├─ 127 tokens: ❌ FAILED  (context too short)
-├─ 207 tokens: ✅ PASSED
-├─ 367 tokens: ✅ PASSED  
-└─ 687 tokens: ❌ FAILED  (model limitation)
-```
-
-**Both full attention AND sparse attention fail identically at 687 tokens**—proving the kernel preserves exact model behavior, including its limitations.
-
-### Kernel Equivalence Proof
-
-```
-Prompt: "Explain quantum computing in 50 words"
-
-BASELINE (Full HuggingFace):
-"Unlike classical computing, which uses bits (bits are the basic 
-units of information in computers"
-
-TOPOLOGICAL KERNEL (Sparse):
-"Unlike classical computing, which uses bits (bits are the basic 
-units of information in computers"
-
-Result: ✅ IDENTICAL OUTPUT
-```
-
-## Economic Impact
-
-| Metric                     | Full Attention   | Condensate Attention    |
-| -------------------------- | ---------------- | ----------------------- |
-| Cost per 1M-token response | ~$1.60 | ~$0.001 |                         |
-| Memory (KV Cache at 524K)  | ~3 GB            | ~3 MB                   |
-| Power consumption          | Baseline         | **99% reduction** |
-
-## License
-
-**The theorem, math, and reference implementations are MIT licensed.** Use them however you want.
-
-The production **Topological Attention kernel** is proprietary:
-
-- © 2026 Jorge L. Ruiz Williams / NaNZeta LLC
-- Available under commercial license
-- Contact: jorgeruizwilliams@gmail.com
-- Pricing: https://topological-attention.dev (coming soon)
+The CLI defaults match the paper: `Qwen/Qwen2-0.5B`, contexts `2048,8192,16384`, supports `97,193,385,769`, `--reuse 1`, `--prompts 5`, `--max-new-tokens 128`.
+Model and dataset are downloaded on first use.
+
+## Limitations
+
+- One small model (Qwen2-0.5B). Mistral-7B was only smoke-tested for mechanics and is not characterized.
+- Five prefixes per context. The results do not establish a population failure rate or a universal sparse-attention limit.
+- The selector is intentionally simple. Mean pooling can dilute isolated high-scoring keys. The paper has not separated coarse retrieval error, insufficient support,
+  harmful omitted value directions, and recursive cache drift as causes of failure.
+- **Timing is not claimed.** The paper's headline operator timings used a proprietary optimized Triton kernel that is not in this repository.
+  Those timings exclude discovery, are not matched-quality, and are not end-to-end serving speed. This repository makes no timing claim.
+- The paper's retrieval grid, reuse results, and H2O comparison use separate protocols and are not reproduced here.
+- Earlier GPT-2 oracle scripts and a benchmark CSV that did not match the paper were removed. They remain available in git history.
 
 ## Citation
 
-```bibtex
-@misc{condensate2026,
-  author = {Ruiz Williams, Jorge L.},
-  title = {The Condensate Theorem: Transformers Are O(n), Not O(n²)},
-  year = {2026},
-  url = {https://github.com/JorgeLRW/condensate-theorem}
-}
-```
+See [CITATION.cff](CITATION.cff).
 
----
+## License
 
-*Discovery date: January 2026 | Patent Pending*
+Code in this repository is released under the [MIT License](LICENSE).
+The `LICENSE` file also notes that the proprietary optimized Triton kernel is not included and is licensed separately.

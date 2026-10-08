@@ -1,29 +1,31 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite it as below."
-title: "The Condensate Theorem: Sparse Attention Without Approximation"
+title: "Attention-Mass Condensation for Sparse Decoding: Margin Stability, Query-Dependent Retrieval, and Operating Limits"
 authors:
   - family-names: "Ruiz Williams"
     given-names: "Jorge L."
-type: "article"
-date-released: 2026-01-31
+type: "software"
+date-released: 2026-08-10
 repository-code: "https://github.com/JorgeLRW/condensate-theorem"
 license: "MIT"
 keywords:
   - "attention mechanism"
   - "sparse attention"
+  - "sparse decoding"
+  - "KV cache"
   - "transformer"
-  - "efficient inference"
-  - "condensate theorem"
 abstract: |
-  We prove that trained transformer models concentrate >99% of attention mass
-  on a sparse, predictable manifold C_i = {Anchor} ∪ {Window} ∪ {Top-K}.
-  This enables exact O(n) attention computation with 157x measured speedup,
-  scaling to 1,257x at 1M tokens.
+  Attention-mass concentration creates an opportunity for sparse decoding, but
+  retained mass alone does not guarantee a stable greedy decision. This work
+  gives an exact omitted-mass identity and a sufficient downstream margin
+  condition, then characterizes a query-dependent mean-pooled block selector.
+  On Qwen2-0.5B, none of 60 paired runs remains identical to dense decoding
+  through 128 tokens, while distributional quality is distinct.
 preferred-citation:
   type: article
   authors:
     - family-names: "Ruiz Williams"
       given-names: "Jorge L."
-  title: "The Condensate Theorem: Sparse Attention Without Approximation"
+  title: "Attention-Mass Condensation for Sparse Decoding: Margin Stability, Query-Dependent Retrieval, and Operating Limits"
   year: 2026
   url: "https://github.com/JorgeLRW/condensate-theorem"

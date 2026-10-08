@@ -1,12 +1,8 @@
-# Condensate Theorem - Validation Dependencies
-# 
-# Install with: pip install -r requirements.txt
-# Then run: python validate.py
+# Tested with torch 2.6.0+cu124, transformers 4.57.1, datasets 5.0.1, accelerate 1.15.0.
+# The survival harness requires a CUDA GPU. For a CUDA build of torch, install it first from
+# https://pytorch.org/get-started/locally/ and then run: pip install -r requirements.txt
 
-torch>=2.0.0
-transformers>=4.30.0
-
-# Optional (for development)
-# pytest
-# black
-# mypy
+torch>=2.6.0
+transformers>=4.57.1
+datasets>=5.0.1
+accelerate>=1.15.0
