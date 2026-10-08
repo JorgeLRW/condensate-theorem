@@ -1,127 +1,80 @@
 #!/usr/bin/env python3
-"""
-Condensate Theorem - One-Command Validation
-============================================
+"""Repository checks.
 
-Run this script to validate the entire theorem:
+    python validate.py              # CPU unit tests for the selector and the omitted-mass identity
+    python validate.py --smoke      # also rerun 2K / prompt 0 / S=97,769 on a CUDA GPU and compare to the archive
 
-    python validate.py
-
-This runs all validation scripts and provides a summary.
-
-NOTE: These are REFERENCE IMPLEMENTATIONS that prove the theorem is correct.
-      The production-optimized Topological Attention kernel (157x+ speedup)
-      is available under commercial license: jorgeruizwilliams@gmail.com
+The smoke rerun is a single paired case from the 60-run sweep, not the full sweep.
 """
 
+import argparse
+import json
 import subprocess
 import sys
+import tempfile
+import unittest
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent
+ARCHIVE = ROOT / "results" / "qwen_survival_clean.json"
+COMPARED_FIELDS = (
+    "first_divergence",
+    "teacher_forced_match",
+    "delta_ppl_percent",
+    "mean_unique_distant_positions_per_kv",
+    "max_unique_distant_positions_per_kv",
+)
+TOLERANCE = 1e-3
 
-def run_validation(script_name: str, description: str) -> bool:
-    """Run a validation script and return success status."""
-    script_path = Path(__file__).parent / "validation" / script_name
-    
-    print("\n" + "=" * 80)
-    print(f"  {description}")
-    print("=" * 80)
-    
-    try:
-        result = subprocess.run(
-            [sys.executable, str(script_path)],
+
+def run_unit_tests():
+    suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))
+    return unittest.TextTestRunner(verbosity=1).run(suite).wasSuccessful()
+
+
+def run_smoke():
+    with tempfile.TemporaryDirectory() as tmp:
+        output = Path(tmp) / "smoke.json"
+        subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_survival.py"),
+                "--contexts", "2048", "--prompts", "1", "--supports", "97,769",
+                "--reuse", "1", "--max-new-tokens", "128", "--output", str(output),
+            ],
             check=True,
-            timeout=300  # 5 minute timeout per script
         )
-        return True
-    except subprocess.CalledProcessError:
-        print(f"  [FAILED]: {script_name}")
-        return False
-    except subprocess.TimeoutExpired:
-        print(f"  [TIMEOUT]: {script_name}")
-        return False
-    except Exception as e:
-        print(f"  [ERROR]: {e}")
-        return False
+        rerun = json.loads(output.read_text(encoding="utf-8"))["survival"]
+
+    archive = json.loads(ARCHIVE.read_text(encoding="utf-8"))["survival"]
+    all_match = True
+    for row in rerun:
+        reference = next(
+            r for r in archive
+            if r["context"] == row["context"]
+            and r["prompt_index"] == row["prompt_index"]
+            and r["support"] == row["support"]
+            and r["reuse"] == row["reuse"]
+        )
+        print(f"S={row['support']} R={row['reuse']} N={row['context']} prompt={row['prompt_index']}")
+        for field in COMPARED_FIELDS:
+            diff = abs(float(row[field]) - float(reference[field]))
+            ok = diff <= TOLERANCE
+            all_match &= ok
+            print(f"  {'MATCH' if ok else 'DIFF '} {field}: rerun={row[field]} archive={reference[field]}")
+    return all_match
 
 
 def main():
-    print("""
-+------------------------------------------------------------------------------+
-|                                                                              |
-|              THE CONDENSATE THEOREM - VALIDATION SUITE                       |
-|                                                                              |
-|    Proving: Trained transformers are O(n), not O(n^2)                        |
-|                                                                              |
-|    This repository contains REFERENCE IMPLEMENTATIONS that validate          |
-|    the theorem's mathematical correctness. The production kernel             |
-|    (157x+ speedup) is available under commercial license.                    |
-|                                                                              |
-|    Contact: jorgeruizwilliams@gmail.com                                      |
-|                                                                              |
-+------------------------------------------------------------------------------+
-""")
-    
-    validations = [
-        ("attention_mass.py", "TEST 1: Attention Mass Distribution - WHY the manifold works"),
-        ("exact_equivalence.py", "TEST 2: Exact Equivalence - Sparse produces identical logits"),
-        ("needle_retrieval.py", "TEST 3: Needle Retrieval - Dynamic Top-K finds buried facts"),
-        ("multimodel.py", "TEST 4: Multi-Model - Pattern holds across architectures"),
-    ]
-    
-    results = []
-    
-    for script, description in validations:
-        success = run_validation(script, description)
-        results.append((script, success))
-    
-    # Summary
-    print("\n")
-    print("=" * 80)
-    print("                           VALIDATION SUMMARY")
-    print("=" * 80)
-    
-    passed = sum(1 for _, success in results if success)
-    total = len(results)
-    
-    for script, success in results:
-        status = "[PASSED]" if success else "[FAILED]"
-        print(f"  {script:<25} {status}")
-    
-    print("-" * 80)
-    print(f"  TOTAL: {passed}/{total} validations passed")
-    print("=" * 80)
-    
-    if passed == total:
-        print("""
-+------------------------------------------------------------------------------+
-|                                                                              |
-|   [PASSED] THEOREM VALIDATED                                                 |
-|                                                                              |
-|   The Condensate Manifold captures ~100% of attention mass.                  |
-|   Sparse attention produces IDENTICAL outputs to full O(n^2) attention.      |
-|   The pattern holds across GPT-2, Pythia, Qwen, and TinyLlama.               |
-|                                                                              |
-|   This reference implementation PROVES the theorem works.                    |
-|   The production Topological Attention kernel achieves 157x+ speedup.        |
-|                                                                              |
-|   License the production kernel: jorgeruizwilliams@gmail.com                 |
-|                                                                              |
-+------------------------------------------------------------------------------+
-""")
-    else:
-        print("""
-[WARNING] Some validations failed. This may be due to:
-   - Missing dependencies (pip install torch transformers)
-   - GPU/CPU memory constraints
-   - Network issues downloading models
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--smoke", action="store_true", help="also run the GPU smoke rerun")
+    args = parser.parse_args()
 
-   Try running individual scripts to debug:
-   python validation/attention_mass.py
-""")
-    
-    return 0 if passed == total else 1
+    ok = run_unit_tests()
+    if args.smoke:
+        ok = run_smoke() and ok
+    print("PASS" if ok else "FAIL")
+    sys.exit(0 if ok else 1)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "model": "Qwen/Qwen2-0.5B",
+    "task": "survival",
+    "dtype": "float16",
+    "device": "NVIDIA GeForce RTX 4090 Laptop GPU",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.57.1",
+    "contexts": [
+      2048
+    ],
+    "supports": [
+      97,
+      769
+    ],
+    "algorithms": [
+      "kv_group"
+    ],
+    "reuse_intervals": [
+      1
+    ],
+    "prompts_per_context": 1,
+    "max_new_tokens": 128,
+    "dense_prefill": true,
+    "sparse_policy": "layer-local query and KV cache; per-layer additive head mask during decode",
+    "teacher_forcing": "common dense-prefill first token is excluded; scores later reference tokens from the preceding reference token",
+    "selector_budget": "support is per query head; unique distant KV positions per KV head are separately recorded",
+    "timing_claim": "none; research harness only"
+  },
+  "survival": [
+    {
+      "context": 2048,
+      "prompt_index": 0,
+      "support": 97,
+      "algorithm": "kv_group",
+      "reuse": 1,
+      "first_divergence": 2,
+      "survives_horizon": false,
+      "survival_horizon": 128,
+      "teacher_forced_match": 93.7007874015748,
+      "teacher_forced_steps": 127,
+      "delta_ppl_percent": 5.073812781614243,
+      "mean_unique_distant_positions_per_kv": 27.349737532808398,
+      "max_unique_distant_positions_per_kv": 32
+    },
+    {
+      "context": 2048,
+      "prompt_index": 0,
+      "support": 769,
+      "algorithm": "kv_group",
+      "reuse": 1,
+      "first_divergence": 22,
+      "survives_horizon": false,
+      "survival_horizon": 128,
+      "teacher_forced_match": 98.4251968503937,
+      "teacher_forced_steps": 127,
+      "delta_ppl_percent": -0.3390408300630522,
+      "mean_unique_distant_positions_per_kv": 696.5396981627297,
+      "max_unique_distant_positions_per_kv": 704
+    }
+  ]
+}
